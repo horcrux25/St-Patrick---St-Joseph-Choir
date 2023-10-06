@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using St_Patrick_and_St_Joseph_Choir_API.Data;
 using St_Patrick_and_St_Joseph_Choir_API.Models;
 using St_Patrick_and_St_Joseph_Choir_API.Models.Dto;
@@ -113,6 +115,55 @@ namespace St_Patrick_and_St_Joseph_Choir_API.Controllers
 
             _db.Members.Remove(member);
             _db.SaveChanges();
+            return NoContent();
+        }
+
+        [HttpPatch]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult UpdatePartialMember(int id, JsonPatchDocument<MemberDTO> patchDTO)
+        {
+            if (patchDTO == null | id == 0)
+            {
+                return BadRequest();
+            }
+
+            var member = _db.Members.AsNoTracking().FirstOrDefault(x => x.MemberId == id);
+
+            MemberDTO memberDTO = new()
+            {
+                MemberId = member.MemberId,
+                Name = member.Name,
+                Email = member.Email,
+                Birthday = member.Birthday,
+                Status = member.Status
+            };
+
+            if (member == null)
+            {
+                return NotFound();
+            };
+
+            patchDTO.ApplyTo(memberDTO, ModelState);
+
+            Member model = new Member()
+            {
+                MemberId = memberDTO.MemberId,
+                Name = memberDTO.Name,
+                Email = memberDTO.Email,
+                Birthday = memberDTO.Birthday,
+                Status = memberDTO.Status
+            };
+
+            _db.Members.Update(model);
+            _db.SaveChanges();
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest();
+            }
+
             return NoContent();
         }
     }

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using St_Patrick_and_St_Joseph_Choir_API.Data;
 using St_Patrick_and_St_Joseph_Choir_API.Models;
@@ -134,6 +135,56 @@ namespace St_Patrick_and_St_Joseph_Choir_API.Controllers
 
             _db.Musics.Remove(music);
             _db.SaveChanges();
+            return NoContent();
+        }
+
+        [HttpPatch("{id:int}",Name = "UpdatePartialSong")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult EditSong(int id, JsonPatchDocument<MusicDTO> patchDTO)
+        {
+            if (patchDTO == null | id == 0)
+            {
+                return BadRequest();
+            }
+
+            var music = _db.Musics.AsNoTracking().FirstOrDefault(x => x.MusicId == id);
+
+            MusicDTO musicDTO = new()
+            {
+                MusicId = music.MusicId,
+                Song = music.Song,
+                Title = music.Title,
+                MusicSheet = music.MusicSheet,
+                YoutubeUrl = music.YoutubeUrl,
+                Soloist = music.Soloist
+            };
+
+            if (music == null)
+            {
+                return NotFound();
+            }
+
+            patchDTO.ApplyTo(musicDTO, ModelState);
+
+            Music model = new Music()
+            {
+                MusicId = musicDTO.MusicId,
+                Song = musicDTO.Song,
+                Title = musicDTO.Title,
+                MusicSheet = musicDTO.MusicSheet,
+                YoutubeUrl = musicDTO.YoutubeUrl,
+                Soloist = musicDTO.Soloist
+            };
+
+            _db.Musics.Update(model);
+            _db.SaveChanges();
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest();
+            }
             return NoContent();
         }
     };
