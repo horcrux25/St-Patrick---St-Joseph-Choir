@@ -8,7 +8,7 @@ using System.ComponentModel;
 
 namespace St_Patrick_and_St_Joseph_Choir_API.Controllers
 {
-    [Route("api/MusicAPI")]
+    [Route("api/MusicsAPI")]
     [ApiController]
     public class MusicsAPI : ControllerBase
     {
